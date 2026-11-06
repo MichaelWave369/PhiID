@@ -6,12 +6,14 @@ import {
   Sparkles, Unplug, UserRound, WifiOff
 } from 'lucide-react';
 import { DEMO_ACCOUNT, createDemoExport, previewIdentityKey, validatePreviewAccount } from './identity.js';
+import ConsentCenter from './ConsentCenter.jsx';
 
 const LOCAL_AUTH_LAB = typeof window !== 'undefined' && window.location.origin === 'http://127.0.0.1:8786';
 
 const NAV = [
   { id: 'overview', name: 'Overview', icon: Layers3 },
   { id: 'ecosystem', name: 'Ecosystem', icon: Network },
+  ...(LOCAL_AUTH_LAB ? [{ id: 'consent', name: 'Consent Lab', icon: Link2 }] : []),
   { id: 'security', name: 'Security', icon: ShieldCheck },
   { id: 'portability', name: 'Portability', icon: Download },
 ];
@@ -213,6 +215,8 @@ function App() {
           <div className="service-grid">{SERVICES.map(s => <ServiceCard key={s.id} service={s} linked={previewLinks.includes(s.id)} onToggle={changeLink}/>)}</div>
           <div className="info-strip"><Network size={17}/><div><strong>One identity, separate permissions.</strong><p>Future integrations will need explicit opt-in, scoped access and service-side authorization. A sign-in cannot authorize OS actions.</p></div></div>
         </>}
+
+        {tab === 'consent' && LOCAL_AUTH_LAB && <ConsentCenter authenticated={localSession?.authenticated === true} />}
 
         {tab === 'security' && <>
           <SectionIntro eyebrow="TRUST BY DESIGN" title="Secure foundations, not security theater." description="We plan to rely on established open identity standards instead of inventing our own passwords, encryption or token service."/>
