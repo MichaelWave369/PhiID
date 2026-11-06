@@ -40,7 +40,7 @@ export function isLocalRequest(req) {
 }
 
 export function isSameOriginAction(req, action) {
-  if (!['logout', 'consent', 'revoke', 'pocket-review', 'pocket-approve', 'pocket-cancel'].includes(action)) return false;
+  if (!['logout', 'consent', 'revoke', 'pocket-review', 'pocket-approve', 'pocket-cancel', 'ledger-record', 'ledger-revoke'].includes(action)) return false;
   return req.headers?.origin === ORIGIN &&
     req.headers?.['x-phiid-action'] === action &&
     req.headers?.['sec-fetch-site'] !== 'cross-site';
