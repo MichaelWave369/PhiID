@@ -18,10 +18,13 @@ import {
   ConsentError, publicConsentCatalog, recordLocalConsent,
   listLocalConsents, removeLocalConsent, requireSession,
 } from './consent.mjs';
+import { openLocalChoiceLedger, LEDGER_SCHEMA } from './ledger.mjs';
 
 const DIST = resolve(fileURLToPath(new URL('../../dist/', import.meta.url)));
 const flows = new Map();
 const sessions = new Map();
+const choiceLedger = process.env.PHIID_LOCAL_LEDGER === '1' ? openLocalChoiceLedger() : null;
+if (choiceLedger) console.log('PhiID R6 PRIVATE local audit ledger active (no service authorization)');
 let configPromise;
 
 function json(res, status, obj, cookies = []) {
@@ -253,6 +256,31 @@ async function handle(req, res) {
     }
     const session = consentSession(req);
     json(res, 200, removeLocalConsent(session, path.split('/').at(-1)));
+  } else if (req.method === 'GET' && req.url === '/auth/ledger') {
+    const session = consentSession(req);
+    json(res, 200, choiceLedger
+      ? choiceLedger.list(session)
+      : {schema:LEDGER_SCHEMA,enabled:false,persistent:false,
+        authority_granted:false,permissions_enforced:false,
+        service_calls:false,active:[],history:[]});
+  } else if (req.method === 'POST' && req.url === '/auth/ledger') {
+    if (!choiceLedger) { json(res, 404, {error:'local_choice_ledger_disabled'}); return; }
+    if (!isSameOriginAction(req, 'ledger-record')) {
+      json(res, 403, {error:'cross_origin_action_denied'});
+      return;
+    }
+    const session = consentSession(req);
+    const payload = await readBoundedJson(req);
+    json(res, 201, {receipt:choiceLedger.record(session,payload)});
+  } else if (req.method === 'DELETE' &&
+             /^\/auth\/ledger\/(phimail|phicloud)$/.test(path) && req.url === path) {
+    if (!choiceLedger) { json(res, 404, {error:'local_choice_ledger_disabled'}); return; }
+    if (!isSameOriginAction(req, 'ledger-revoke')) {
+      json(res, 403, {error:'cross_origin_action_denied'});
+      return;
+    }
+    const session = consentSession(req);
+    json(res, 200, choiceLedger.revoke(session,path.split('/').at(-1)));
   } else if (req.method === 'GET' && req.url === '/auth/login') {
     await login(res);
   } else if (req.method === 'GET' && path === '/auth/callback') {
