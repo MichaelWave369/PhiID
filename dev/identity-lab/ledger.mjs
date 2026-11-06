@@ -90,6 +90,9 @@ function transaction(db, work) {
  * authorization server, vault, or remotely discoverable permission endpoint.
  */
 export function openLocalChoiceLedger(dbPath = DEFAULT_DB_PATH) {
+  if (process.platform === 'win32') {
+    throw new Error('r6_ledger_requires_posix_permissions_use_wsl2');
+  }
   if (typeof dbPath !== 'string' || !dbPath.endsWith('.sqlite')) {
     throw new Error('invalid_ledger_file');
   }
