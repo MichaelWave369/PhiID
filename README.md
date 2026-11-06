@@ -41,6 +41,8 @@ The R1 development branch adds an actual standards-based **localhost-only** iden
 
 See **[Local Identity Lab setup and verification](docs/R1_LOCAL_IDENTITY_LAB.md)** for private credential setup, local Docker Compose steps, dev-client configuration, known limitations and end-to-end smoke checklist.
 
+PhiMail's R1 Field Connections panel can inspect the synthetic export as **untrusted display-only data**. See [PhiMail consumer compatibility](docs/PHIMAIL_CONSUMER.md). No shared authentication or account connection is implied.
+
 Read the [identity contract](docs/IDENTITY_CONTRACT.md), [threat model](docs/THREAT_MODEL.md), [roadmap](docs/ROADMAP.md) and [agent guardrails](AGENTS.md).
 
 ## Ecosystem
