@@ -180,3 +180,8 @@ footer a:hover {color:#f0dba5;}
 @media (prefers-reduced-motion: reduce) {
   *,*::before,*::after {transition:none!important;animation:none!important;scroll-behavior:auto!important;}
 }
+
+/* R1 local identity lab is deliberately distinct from the hosted static demo. */
+.auth-controls { margin-top: 18px; padding: 15px; border: 1px solid #514c39; background: #212623; border-radius: 10px; display:flex; align-items:flex-start; flex-direction:column; gap:9px; }
+.auth-controls .primary-btn { font-size: 11px; padding: 10px 12px; }
+.auth-controls small { color:#aaafaa; font-size:10px; line-height:1.55; }
