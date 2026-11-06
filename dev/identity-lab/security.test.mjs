@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {
   ORIGIN, ISSUER, CLIENT_ID, REDIRECT_URI, randomOpaqueId,
   parseCookies, cookieHeader, isLocalRequest, isSameOriginMutation,
-  publicProfile, pruneExpired, containsUnsafePath,
+  publicProfile, pruneExpired, containsUnsafePath, isSameOriginAction,
+  assertLoopbackProviderMetadata,
 } from './security.mjs';
 
 test('identity lab endpoints are fixed loopback addresses', () => {
@@ -71,4 +72,33 @@ test('deny encoded/path traversal in static requests', () => {
     assert.equal(containsUnsafePath(path), true);
   }
   assert.equal(containsUnsafePath('/PhiID/assets/index-123.js'), false);
+});
+
+test('consent mutations require exact same origin and action', () => {
+  const base = { headers: {
+    origin: ORIGIN, 'x-phiid-action': 'consent', 'sec-fetch-site': 'same-origin'
+  }};
+  assert.equal(isSameOriginAction(base, 'consent'), true);
+  assert.equal(isSameOriginAction(base, 'revoke'), false);
+  assert.equal(isSameOriginAction(base, 'unknown'), false);
+  assert.equal(isSameOriginAction({ headers: { ...base.headers, origin: 'http://evil.invalid' } }, 'consent'), false);
+  assert.equal(isSameOriginAction({ headers: { ...base.headers, 'sec-fetch-site': 'cross-site' } }, 'consent'), false);
+});
+
+test('OIDC discovery endpoints must stay inside the expected loopback realm', () => {
+  const good = {
+    issuer: ISSUER,
+    authorization_endpoint: ISSUER + '/protocol/openid-connect/auth',
+    token_endpoint: ISSUER + '/protocol/openid-connect/token',
+    jwks_uri: ISSUER + '/protocol/openid-connect/certs'
+  };
+  assert.equal(assertLoopbackProviderMetadata(good), true);
+  for (const invalid of [
+    { ...good, issuer: 'http://attacker.invalid' },
+    { ...good, jwks_uri: 'http://attacker.invalid/keys' },
+    { ...good, token_endpoint: 'http://127.0.0.1:8081/realms/phiid-dev/protocol/openid-connect/token' },
+    { ...good, authorization_endpoint: 'http://localhost:8080/realms/phiid-dev/protocol/openid-connect/auth' },
+    { ...good, jwks_uri: ISSUER + '/protocol/openid-connect/certs?redirect=https://evil.invalid' },
+    { ...good, token_endpoint: 'https://127.0.0.1:8080/realms/phiid-dev/protocol/openid-connect/token' }
+  ]) assert.throws(() => assertLoopbackProviderMetadata(invalid));
 });
