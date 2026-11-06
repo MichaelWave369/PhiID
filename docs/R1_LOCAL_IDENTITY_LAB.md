@@ -107,3 +107,7 @@ Automated CI verifies metadata validation, security helpers, loopback route beha
 **Do not mark a real login deployment as verified based only on a green CI run.**
 
 References: [Keycloak Docker guide](https://www.keycloak.org/getting-started/getting-started-docker), [Keycloak containers/import](https://www.keycloak.org/server/containers), [openid-client v6](https://github.com/panva/openid-client), [RFC 9700](https://www.rfc-editor.org/rfc/rfc9700.html).
+
+## Companion PhiMail development client
+
+The development realm now also declares the separate PhiMail OIDC client phimail-bff-dev. It is not shared authentication state or production SSO. Read [the PhiMail dev client guide](R3_PHIMAIL_OIDC_CLIENT.md). Existing imported Keycloak realms must be updated through Admin UI.

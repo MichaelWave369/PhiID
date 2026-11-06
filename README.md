@@ -53,6 +53,8 @@ PhiMail's R1 Field Connections panel can inspect the synthetic export as **untru
 
 Read the [identity contract](docs/IDENTITY_CONTRACT.md), [threat model](docs/THREAT_MODEL.md), [roadmap](docs/ROADMAP.md) and [agent guardrails](AGENTS.md).
 
+The local Keycloak realm now includes a separate **PhiMail OIDC test client** using the same issuer with independent application sessions. See [PhiMail dev client setup](docs/R3_PHIMAIL_OIDC_CLIENT.md). No mailbox access or service permissions follow.
+
 ## Ecosystem
 
 - [PhiOS](https://github.com/MichaelWave369/PhiOS)
