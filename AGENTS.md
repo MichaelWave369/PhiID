@@ -48,3 +48,14 @@ PhiID is a **security-critical identity project**, but the R0 site is **not a lo
 - Never use PhiID identity as evidence of a Gmail OAuth session, mailbox authorization, PhiCloud access, consent enforcement or PhiOS effect approval.
 - The R5 test must complete through PhiMail's real Vite proxy and backend; validating a synthetic independent OIDC exchange alone is only the earlier R4 milestone.
 - Keep the real-provider CI output redacted and never log signed tokens, secrets, callback URLs, or Keycloak form bodies.
+
+## R6 private consent-choice ledger
+
+- Only a verified R1 Keycloak session may read, record, or revoke the current user's persistent review choices. NEVER trust submitted issuer/subject or browser profile exports.
+- The R6 database is a private development-only review audit, NOT a grant database, OAuth server, signing key store, resource-permission store or public consent endpoint. PhiMail/PhiCloud/PhiOS must NEVER authorize actions by reading R6 rows.
+- The server must require a separate explicit acknowledgment for durable storage, exact fixed service/scope allowlists, same-origin mutation headers and bounded JSON bodies.
+- Keep the SQLite DB in gitignored `dev/identity-lab/.private/`, with owner-only file/directory permissions. Reject symlinks or shared file permissions; fail closed if the environment is unsafe.
+- Persist no raw OIDC sub, email, username, credentials, cookies, tokens, signing keys or mailbox content. The pseudonymous subject index is **not** a credential.
+- Retain history only for a bounded 90-day audit window, allow explicit local revocation, and label `external_token_revoked:false` until there is an actual resource-server token.
+- Local development feature is off without `PHIID_LOCAL_LEDGER=1`; never turn it on on GitHub Pages or deploy it publicly. `node:sqlite` on Node 22 may have experimental API behavior.
+- Do not infer from a passing test that PhiCloud authorization, real mailbox connection, or resource-owner access control has been implemented.
