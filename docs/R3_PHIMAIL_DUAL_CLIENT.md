@@ -7,7 +7,7 @@ The `phiid-dev` Keycloak realm now declares **two separate public OIDC clients**
 | Client ID | App | Exact callback | Cookie/session |
 | --- | --- | --- | --- |
 | `phiid-bff-dev` | PhiID Identity Center | `http://127.0.0.1:8786/auth/callback` | PhiID's own in-memory Node session |
-| `phimail-phiid-dev` | PhiMail Field Connections | `http://localhost:5173/auth/phiid/callback` | PhiMail's own short-lived OIDC dev session |
+| `phimail-bff-dev` | PhiMail Field Connections | `http://127.0.0.1:5173/auth/phiid/callback` | PhiMail's own short-lived OIDC dev session |
 
 Both use the Keycloak issuer `http://127.0.0.1:8080/realms/phiid-dev`, request only `openid profile`, and use authorization code + PKCE S256, distinct state/nonce values and exact redirect allowlists. Implicit flow, resource-owner password grant and service accounts are disabled.
 
@@ -19,7 +19,7 @@ The same verified `(iss, sub)` may be displayed after independently completing s
 2. From PhiID, run `docker compose --env-file dev/keycloak/.env -f dev/keycloak/compose.yaml up -d`. Open `http://127.0.0.1:8080/admin/`, switch to `phiid-dev` and create a disposable user using Keycloak Admin (no real personal account data).
 3. **Existing realm warning:** Keycloak startup realm imports do not automatically update an already-created realm. If you created `phiid-dev` before R3, manually register the new public client in Keycloak Admin with the exact settings above, or use a fresh disposable Keycloak instance. Do **not** delete a realm containing data you intend to keep.
 4. From PhiID: `npm install && npm run build && npm run dev:identity`. Open `http://127.0.0.1:8786/PhiID/`.
-5. From the separate PhiMail R2B branch, configure its gitignored `.env.local`: add `PHIMAIL_ENABLE_PHIID_DEV=1` and `BRIDGE_PUBLIC_ORIGIN=http://localhost:5173`. In separate PhiMail terminals run `npm install`, `npm run bridge:dev` and `npm run dev`. Open `http://localhost:5173/`, then **Field Connections**.
+5. From PhiMail's separate `feat/r2-local-phiid-oidc` branch, configure its gitignored `.env.local`: add `PHIMAIL_LOCAL_PHIID=1` and `BRIDGE_PUBLIC_ORIGIN=http://127.0.0.1:5173`. In separate PhiMail terminals run `npm install`, `npm run bridge:dev` and `npm run dev`. Open `http://127.0.0.1:5173/`, then **Field Connections**.
 6. In each app independently use its Keycloak sign-in and confirm the verified subject matches for the same disposable user. Clear only PhiMail's session and confirm that the PhiID session persists. Clear only PhiID's session and confirm PhiMail remains independently logged in until expiry. Keycloak SSO itself may persist.
 7. Confirm neither session creates a real PhiMail email address, Gmail access, PhiCloud data access or PhiOS device permission.
 
@@ -38,4 +38,4 @@ CI covers the realm's separate client IDs, exact redirects, scope/flow restricti
 
 R3 does not implement production identity hosting, passkey registration, persistent audit, upstream logout coordination, token revocation propagation, phi-field.com domain verification, mailbox provisioning, or cross-device synchronization.
 
-See [PhiMail's R2B integration instructions](https://github.com/MichaelWave369/PhiMail/blob/main/docs/PHIID_OIDC_R2B.md) once merged.
+See the companion [PhiMail R2 local identity work](https://github.com/MichaelWave369/PhiMail/pull/6). This PhiID PR deliberately follows the existing PhiMail client's exact `phimail-bff-dev` ID and `127.0.0.1:5173` callback. A competing alternate implementation exists as a separate draft and must not be merged simultaneously.
