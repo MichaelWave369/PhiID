@@ -4,7 +4,7 @@
 
 PhiID is the proposed **sovereign account and identity layer** for PhiOS Desktop, PhiOS WebOS, PhiOS Mobile, PhiMail, PhiCloud and opt-in Phi ecosystem applications.
 
-> **Status: R0 foundation. No live authentication exists.** The R0 feature branch provides a browser-based, clearly marked identity-center *preview* and a tested, portable account-metadata contract. This is not an OpenID Provider, password service, account registry, passkey enrollment system, or source of real authorization.
+> **Status: R1 local identity experiment.** The public GitHub Pages site remains a clearly labeled non-authenticating preview. An optional localhost-only Keycloak + OpenID Connect lab has been added on a development branch; it has no production account registration, PhiOS action authority, hosted PhiMail delivery or PhiCloud permissions. Full end-to-end sign-in has not yet been confirmed on operator hardware.
 
 ## Core rules
 
@@ -32,6 +32,14 @@ npm run build
 ~~~
 
 For a repository configured to deploy GitHub Pages via Actions, the planned static preview address is https://michaelwave369.github.io/PhiID/ after a successful deployment. It is **not** a production identity endpoint. The browser bundle intentionally contains zero signing keys, secrets, tokens or user records.
+
+### R1: Optional local identity lab
+
+The R1 development branch adds an actual standards-based **localhost-only** identity flow with Keycloak and `openid-client` on a small Node bridge. It uses authorization code + PKCE S256, random state/nonce, exact local issuer and callback, short-lived HttpOnly session cookies, and discards OAuth tokens without giving them to browser JavaScript.
+
+**This is experimental.** The hosted GitHub Pages UI stays a synthetic preview, and the local identity session cannot authorize PhiOS, PhiCloud or PhiMail actions.
+
+See **[Local Identity Lab setup and verification](docs/R1_LOCAL_IDENTITY_LAB.md)** for private credential setup, local Docker Compose steps, dev-client configuration, known limitations and end-to-end smoke checklist.
 
 Read the [identity contract](docs/IDENTITY_CONTRACT.md), [threat model](docs/THREAT_MODEL.md), [roadmap](docs/ROADMAP.md) and [agent guardrails](AGENTS.md).
 

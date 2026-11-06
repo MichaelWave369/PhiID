@@ -12,11 +12,14 @@ All checkboxes are implementation evidence targets, not claims that the service 
 
 ## R1 — Audited development identity provider
 
-- [ ] Provision an audited open-source OIDC provider in local-only development, e.g. Keycloak
-- [ ] Document and test registered clients and redirect allowlist
-- [ ] Verify true OIDC flow with PKCE S256 and audited relying-party client
-- [ ] Add integration tests for denied mismatched issuer/audience and expired tokens
-- [ ] No credentials, signing keys, PII or client secrets in repository
+- [x] Commit a local-only Keycloak Compose profile and restricted dev client realm import (not deployed by CI)
+- [x] Document exact registered callback and PKCE S256 requirements
+- [x] Implement an opt-in Node loopback OIDC client bridge using vetted `openid-client`; server-side flow state and ephemeral sessions
+- [x] Add security-helper and unauthenticated-route tests
+- [ ] Run an operator-controlled real Keycloak sign-in smoke test with a test user and verify callback, ID token and nonce validation
+- [ ] Add real end-to-end tests for mismatch issuer, audience and expired tokens against a disposable test realm
+- [ ] Complete separate threat review and security hardening for any non-loopback deployment
+- [x] No admin credentials, live tokens, signing keys or user PII committed
 
 ## R2 — Consent and PhiCloud bridge
 
