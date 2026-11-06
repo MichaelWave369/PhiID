@@ -9,13 +9,17 @@
  * KC_BOOTSTRAP_ADMIN_PASSWORD. Generates, then deletes, one random test user.
  */
 import assert from 'node:assert/strict';
-import { randomBytes } from 'node:crypto';
+import { randomBytes,generateKeyPairSync,sign as signRaw,verify as verifyRaw } from 'node:crypto';
+import { mkdtempSync,writeFileSync,rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as oidc from 'openid-client';
 import { ISSUER, ORIGIN, REDIRECT_URI } from '../identity-lab/security.mjs';
+import { CONFIG_SCHEMA as APPROVAL_CONFIG_SCHEMA } from '../identity-lab/pocket-approval.mjs';
 
 const KEYCLOAK = 'http://127.0.0.1:8080';
 const MAIL_CALLBACK = 'http://127.0.0.1:5173/auth/phiid/callback';
@@ -250,7 +254,102 @@ async function withBridge(callback) {
   }
 }
 
-async function verifyPhiIdSession(user, token) {
+
+function canonical(value) {
+  if(value === null || typeof value === 'string' || typeof value === 'boolean' || typeof value === 'number')
+    return JSON.stringify(value);
+  if(Array.isArray(value)) return '[' + value.map(canonical).join(',') + ']';
+  return '{' + Object.keys(value).sort().map(k=>JSON.stringify(k)+':'+canonical(value[k])).join(',') + '}';
+}
+/**
+ * CI-only keys and signed synthetic Pocket permit. The signer remains outside
+ * the PhiID BFF and the pinned private approval key stays in a restricted file.
+ * This exercises verified OIDC + explicit approval, not live PocketMesh routing.
+ */
+function makePocketApprovalFixture(subject) {
+  const dir=mkdtempSync(join(tmpdir(),'phiid-real-approval-'));
+  const permits=generateKeyPairSync('ed25519');
+  const approver=generateKeyPairSync('ed25519');
+  const privateFile=join(dir,'approver.pem');
+  const configFile=join(dir,'approval-config.json');
+  writeFileSync(privateFile,approver.privateKey.export({format:'pem',type:'pkcs8'}),
+    {mode:0o600,flag:'wx'});
+  writeFileSync(configFile,JSON.stringify({
+    schema:APPROVAL_CONFIG_SCHEMA,
+    policyEpoch:1,approvalKeyId:'approver-ci',permitKeyId:'permit-ci',
+    allowedSubjects:[subject],allowedProfiles:['health'],
+    permitPublicKeyPem:permits.publicKey.export({format:'pem',type:'spki'}),
+    approvalPrivateKeyFile:privateFile
+  }),{mode:0o600,flag:'wx'});
+  const now=Date.now();
+  const request={
+    schema:'NBGPocketMesh.SignedExecutionRequest.v1',
+    audience:'NBGPocketMesh.offline-local-runner.v1',
+    policyEpoch:1,nonce:randomBytes(16).toString('hex'),
+    issuedAtMs:now,expiresAtMs:now+60000,
+    librarySha256:'a'.repeat(64),albumId:'network-health',albumRevision:2,
+    albumSha256:'b'.repeat(64),profile:'health',mode:'selective',
+    e0ReceiptSha256:'c'.repeat(64),taskSha256:'d'.repeat(64),
+    manifestDigest:'e'.repeat(64),inputSha256:'f'.repeat(64)
+  };
+  const unsigned={schema:'NBGPocketMesh.SignedExecutionPermit.v1',
+    algorithm:'Ed25519',keyId:'permit-ci',request};
+  const signature=signRaw(null,Buffer.from(canonical(unsigned)),permits.privateKey).toString('base64url');
+  return {configFile,approverPublicKey:approver.publicKey,
+    permit:{...unsigned,signature},
+    cleanup:()=>rmSync(dir,{recursive:true,force:true})};
+}
+async function verifyPocketApprovalAfterRealLogin(sessionCookie,profile,approvalFixture) {
+  const anonymous=await appRequest('/auth/pocket/review',{
+    method:'POST',action:'pocket-review',
+    body:{permit:approvalFixture.permit}
+  });
+  assert.equal(anonymous.status,401,'anonymous request unexpectedly reached approval review');
+  const csrf=await appRequest('/auth/pocket/review',{
+    method:'POST',cookie:sessionCookie,
+    body:{permit:approvalFixture.permit}
+  });
+  assert.equal(csrf.status,403,'review unexpectedly accepted missing origin/action binding');
+  const stage=await appRequest('/auth/pocket/review',{
+    method:'POST',cookie:sessionCookie,action:'pocket-review',
+    body:{permit:approvalFixture.permit}
+  });
+  assert.equal(stage.status,200,'verified local OIDC session could not stage reviewed permit');
+  const review=await stage.json();
+  assert.equal(review.details.albumId,'network-health');
+  assert.equal(review.details.profile,'health');
+  assert.equal(review.details.scope,'pocket.album.execute');
+  assert.equal(review.details.revision,2);
+  const noAcknowledgement=await appRequest('/auth/pocket/approve',{
+    method:'POST',cookie:sessionCookie,action:'pocket-approve',
+    body:{reviewId:review.reviewId,acknowledged:false}
+  });
+  assert.equal(noAcknowledgement.status,400);
+  const confirm=await appRequest('/auth/pocket/approve',{
+    method:'POST',cookie:sessionCookie,action:'pocket-approve',
+    body:{reviewId:review.reviewId,acknowledged:true}
+  });
+  assert.equal(confirm.status,200,'explicitly acknowledged approval was not signed');
+  const envelope=await confirm.json();
+  assert.equal(envelope.schema,'NBGPocketMesh.PhiIDAuthorizedRequest.v0');
+  assert.deepEqual(envelope.permit,approvalFixture.permit);
+  assert.equal(envelope.approval.statement.subject.iss,ISSUER);
+  assert.equal(envelope.approval.statement.subject.sub,profile.sub);
+  assert.equal(envelope.approval.statement.purpose,'execute-reviewed-pocket-album');
+  assert.ok(envelope.approval.statement.expiresAtMs <= approvalFixture.permit.request.expiresAtMs);
+  const {signature,...unsigned}=envelope.approval;
+  assert.equal(verifyRaw(null,Buffer.from(canonical(unsigned)),
+    approvalFixture.approverPublicKey,Buffer.from(signature,'base64url')),true,
+  'approval statement must be independently Ed25519 signed');
+  const replay=await appRequest('/auth/pocket/approve',{
+    method:'POST',cookie:sessionCookie,action:'pocket-approve',
+    body:{reviewId:review.reviewId,acknowledged:true}
+  });
+  assert.equal(replay.status,400,'same reviewed approval could be signed twice');
+  return envelope;
+}
+
+async function verifyPhiIdSession(user, token, approvalFixture) {
   const before = await appRequest('/auth/session');
   assert.equal(before.status, 200);
   assert.equal((await before.json()).authenticated, false);
@@ -283,6 +382,8 @@ async function verifyPhiIdSession(user, token) {
   assert.ok(!Object.hasOwn(profile,'access_token'));
   assert.ok(!Object.hasOwn(profile,'refresh_token'));
   assert.ok(!Object.hasOwn(profile,'permissions'));
+
+  if(approvalFixture) await verifyPocketApprovalAfterRealLogin(sessionCookie,profile,approvalFixture);
 
   const denied = await appRequest('/auth/consents');
   assert.equal(denied.status, 401);
@@ -361,11 +462,18 @@ async function main() {
   let user;
   try {
     user = await createDisposableUser(admin);
-    await withBridge(async()=>{
-      const subject = await verifyPhiIdSession(user, admin);
-      await verifySecondClient(user, subject);
-    });
-    console.log('PASS: real Keycloak PhiID login, signed claims, consent, logout and independent PhiMail-client token validation');
+    const approvalFixture=makePocketApprovalFixture(user.userId);
+    try{
+      process.env.PHIID_POCKET_APPROVAL_CONFIG=approvalFixture.configFile;
+      await withBridge(async()=>{
+        const subject = await verifyPhiIdSession(user, admin, approvalFixture);
+        await verifySecondClient(user, subject);
+      });
+    }finally{
+      delete process.env.PHIID_POCKET_APPROVAL_CONFIG;
+      approvalFixture.cleanup();
+    }
+    console.log('PASS: real Keycloak PhiID login, signed action review, consent, logout and independent PhiMail-client token validation');
     console.log('BOUNDARY: PhiMail application bridge and production sign-in were not exercised');
   } finally {
     if (user?.userId) {

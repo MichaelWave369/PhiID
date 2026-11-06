@@ -67,6 +67,15 @@ Read the [identity contract](docs/IDENTITY_CONTRACT.md), [threat model](docs/THR
 
 The local Keycloak realm now includes a separate **PhiMail OIDC test client** using the same issuer with independent application sessions. See [PhiMail dev client setup](docs/R3_PHIMAIL_OIDC_CLIENT.md). No mailbox access or service permissions follow.
 
+
+### R6: Verified local Pocket action review (development only)
+
+The [Pocket Action Approval Lab](docs/R6_POCKET_ACTION_APPROVAL.md) adds an **optional, disabled-by-default** review screen visible only through PhiID's `127.0.0.1:8786` identity bridge. It requires a **real Keycloak-verified OIDC session**, a separate valid signed PocketMesh execution permit, an explicitly acknowledged review of the exact album action, and an operator-owned **independent Ed25519 approval signing key**. The signing key is loaded only by the protected development server, never shipped to GitHub Pages or browser JavaScript.
+
+The second signed statement binds purpose, scope, audience, approval ID, issuer/subject from the verified local session, policy epoch, permit digest and a short expiration. The existing R2 consent receipts **cannot grant execution authority**. The signing session is limited to the operator's allowlisted disposable subjects and expires, and the service does not execute PocketMesh code.
+
+Use `npm test` and review the opt-in [real Keycloak smoke test](docs/R6_POCKET_ACTION_APPROVAL.md). The test verifies sign-in plus user acknowledgment and signature issuance with ephemeral keys; it does **not** demonstrate live PocketMesh execution, production human consent, passkeys, key rotation or OS permissions.
+
 ## Ecosystem
 
 - [PhiOS](https://github.com/MichaelWave369/PhiOS)

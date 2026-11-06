@@ -102,6 +102,22 @@ test('R1 server denies remote/CSRF access and has no anonymous principal', async
   });
   assert.equal(noAuthRevoke.status, 401);
 
+  const pocketStatus=await request('/auth/pocket/status');
+  assert.equal(pocketStatus.status,200);
+  const pocketFlags=JSON.parse(pocketStatus.body);
+  assert.equal(pocketFlags.enabled,false);
+  assert.equal(pocketFlags.authenticated,false);
+  assert.equal(pocketFlags.executionsPerformed,false);
+
+  const pocketDisabled=await request('/auth/pocket/review',{
+    method:'POST',headers:{origin:ORIGIN,'x-phiid-action':'pocket-review','content-type':'application/json'}
+  });
+  assert.equal(pocketDisabled.status,404);
+  const approvalDisabled=await request('/auth/pocket/approve',{
+    method:'POST',headers:{origin:ORIGIN,'x-phiid-action':'pocket-approve','content-type':'application/json'}
+  });
+  assert.equal(approvalDisabled.status,404);
+
   const absent = await request('/v1/users');
   assert.equal(absent.status, 404);
   const forbiddenQuery = await request('/auth/session?probe=true');

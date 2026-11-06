@@ -7,13 +7,14 @@ import {
 } from 'lucide-react';
 import { DEMO_ACCOUNT, createDemoExport, previewIdentityKey, validatePreviewAccount } from './identity.js';
 import ConsentCenter from './ConsentCenter.jsx';
+import PocketApprovalCenter from './PocketApprovalCenter.jsx';
 
 const LOCAL_AUTH_LAB = typeof window !== 'undefined' && window.location.origin === 'http://127.0.0.1:8786';
 
 const NAV = [
   { id: 'overview', name: 'Overview', icon: Layers3 },
   { id: 'ecosystem', name: 'Ecosystem', icon: Network },
-  ...(LOCAL_AUTH_LAB ? [{ id: 'consent', name: 'Consent Lab', icon: Link2 }] : []),
+  ...(LOCAL_AUTH_LAB ? [{ id: 'consent', name: 'Consent Lab', icon: Link2 }, { id: 'pocket-approval', name: 'Pocket Approval Lab', icon: ShieldCheck }] : []),
   { id: 'security', name: 'Security', icon: ShieldCheck },
   { id: 'portability', name: 'Portability', icon: Download },
 ];
@@ -217,6 +218,8 @@ function App() {
         </>}
 
         {tab === 'consent' && LOCAL_AUTH_LAB && <ConsentCenter authenticated={localSession?.authenticated === true} />}
+
+        {tab === 'pocket-approval' && LOCAL_AUTH_LAB && <PocketApprovalCenter authenticated={localSession?.authenticated === true} />}
 
         {tab === 'security' && <>
           <SectionIntro eyebrow="TRUST BY DESIGN" title="Secure foundations, not security theater." description="We plan to rely on established open identity standards instead of inventing our own passwords, encryption or token service."/>
