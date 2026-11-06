@@ -52,7 +52,7 @@ All checkboxes are implementation evidence targets, not claims that the service 
 
 ## R3 — Independent PhiMail local sign-in (new foundation)
 
-- [x] Register a second OIDC public client `phimail-phiid-dev` in the local Keycloak realm import
+- [x] Register a second OIDC public client `phimail-bff-dev` in the local Keycloak realm import
 - [x] Restrict each client to a distinct exact localhost redirect and PKCE S256; test for no wildcard or password grant
 - [x] Document independence from Gmail email sessions and PhiOS authority
 - [ ] Verify two end-to-end authorization-code sign-ins against a running Keycloak test user
