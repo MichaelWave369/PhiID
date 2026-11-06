@@ -1,0 +1,21 @@
+/* R6 local-only Pocket approval review; public Pages has no route to this pane. */
+.pocket-approval{max-width:1050px;margin:auto}
+.pocket-approval .r2-panel{margin-top:18px}
+.pocket-stage textarea{width:100%;resize:vertical;min-height:145px;max-height:300px;
+  background:#101b25;color:#dfecf0;border:1px solid #415767;border-radius:8px;
+  font:12px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;padding:13px;
+  box-sizing:border-box;overflow-wrap:anywhere}
+.pocket-stage textarea:focus{outline:2px solid #c8a966;outline-offset:1px}
+.pocket-stage .primary-btn{margin-top:14px}
+.pocket-review{border-color:#af8f52;background:linear-gradient(145deg,#18212b,#231f22)}
+.pocket-review dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:18px 0}
+.pocket-review dl div{border:1px solid #40515c;border-radius:8px;background:#111e29;padding:12px;min-width:0}
+.pocket-review dt{color:#93abb9;font-size:10px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.pocket-review dd{color:#e6edf1;font-size:12px;margin:0;overflow-wrap:anywhere}
+.pocket-review dd code{color:#e6c57d;font-size:10px}
+.pocket-result pre{background:#0f1c26;color:#c6e3d8;border:1px solid #446558;
+  padding:16px;border-radius:8px;overflow:auto;max-height:360px;
+  font:11px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+.pocket-result .primary-btn{margin-top:10px}
+.pocket-approval button:disabled{opacity:.48;cursor:not-allowed}
+@media(max-width:760px){.pocket-review dl{grid-template-columns:1fr}}
