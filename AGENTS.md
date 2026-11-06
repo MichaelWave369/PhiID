@@ -12,3 +12,12 @@ PhiID is a **security-critical identity project**, but the R0 site is **not a lo
 8. Separate demos and declared future plans from working integration. Never display invented connected/healthy/secure states.
 9. Review every new remote endpoint, write operation, redirect and credential flow against the security threat model. CI green does not constitute a security audit.
 10. Prefer accessible, deterministic, well-labeled interfaces and testable pure contract helpers.
+
+## R1 local OIDC bridge constraints
+
+- `dev/keycloak/compose.yaml` and `dev/identity-lab/server.mjs` are **local-only**. Never add `0.0.0.0` bindings, public DNS, tunnels, proxy ingress or GitHub Pages login capability to this development deployment.
+- `openid-client` handles token/ID Token validation. Never parse an unverified JWT as an authenticated account. No login button on the static GitHub Pages site.
+- Treat `allowInsecureRequests` as an explicit exception for the fixed HTTP `127.0.0.1` realm only. A production project MUST use HTTPS, a separately vetted configuration and reviews.
+- PKCE verifier, state and nonce stay server-side and short-lived. No token material in browser JS or storage. Display-only verified profiles never grant PhiCloud access or PhiOS effect authority.
+- A valid local session proves only a local development OIDC sign-in at that moment. It does not imply enterprise-grade recovery, production identity, revocation or account lifecycle support.
+- All tests in CI are automated contract/route checks; end-to-end Keycloak login remains a separately documented manual test until an isolated integration rig exists.
