@@ -39,10 +39,41 @@ export function isLocalRequest(req) {
   return host === '127.0.0.1:8786' && (remote === '127.0.0.1' || remote === '::ffff:127.0.0.1');
 }
 
-export function isSameOriginMutation(req) {
+export function isSameOriginAction(req, action) {
+  if (!['logout', 'consent', 'revoke'].includes(action)) return false;
   return req.headers?.origin === ORIGIN &&
-    req.headers?.['x-phiid-action'] === 'logout' &&
+    req.headers?.['x-phiid-action'] === action &&
     req.headers?.['sec-fetch-site'] !== 'cross-site';
+}
+
+export function isSameOriginMutation(req) {
+  return isSameOriginAction(req, 'logout');
+}
+
+/**
+ * The trusted issuer is not enough: metadata must not redirect token exchange
+ * or signing-key retrieval to a hostile non-loopback endpoint.
+ */
+export function assertLoopbackProviderMetadata(meta) {
+  if (!meta || meta.issuer !== ISSUER) throw new TypeError('issuer_mismatch');
+  const prefix = '/realms/phiid-dev/protocol/openid-connect/';
+  const expected = {
+    authorization_endpoint: 'auth',
+    token_endpoint: 'token',
+    jwks_uri: 'certs',
+  };
+  for (const [field, suffix] of Object.entries(expected)) {
+    const value = meta[field];
+    if (typeof value !== 'string') throw new TypeError('missing_provider_endpoint');
+    let url;
+    try { url = new URL(value); } catch { throw new TypeError('invalid_provider_endpoint'); }
+    if (url.protocol !== 'http:' || url.hostname !== '127.0.0.1' ||
+        url.port !== '8080' || url.username || url.password ||
+        url.pathname !== prefix + suffix || url.search || url.hash) {
+      throw new TypeError('non_loopback_or_unexpected_provider_endpoint');
+    }
+  }
+  return true;
 }
 
 export function publicProfile(claims) {

@@ -11,8 +11,13 @@ import * as oidc from 'openid-client';
 import {
   ORIGIN, ISSUER, CLIENT_ID, REDIRECT_URI, FLOW_TTL_MS, SESSION_TTL_MS,
   randomOpaqueId, parseCookies, cookieHeader, isLocalRequest,
-  isSameOriginMutation, publicProfile, pruneExpired, containsUnsafePath,
+  isSameOriginMutation, isSameOriginAction, assertLoopbackProviderMetadata,
+  publicProfile, pruneExpired, containsUnsafePath,
 } from './security.mjs';
+import {
+  ConsentError, publicConsentCatalog, recordLocalConsent,
+  listLocalConsents, removeLocalConsent, requireSession,
+} from './consent.mjs';
 
 const DIST = resolve(fileURLToPath(new URL('../../dist/', import.meta.url)));
 const flows = new Map();
@@ -44,7 +49,7 @@ function getOidc() {
       { token_endpoint_auth_method: 'none' }, oidc.None(),
       { execute: [oidc.allowInsecureRequests], timeout: 8 }, // localhost HTTP only
     ).then(config => {
-      if (config.serverMetadata().issuer !== ISSUER) throw new Error('issuer mismatch');
+      assertLoopbackProviderMetadata(config.serverMetadata());
       if (!config.serverMetadata().supportsPKCE()) throw new Error('S256 PKCE support is required');
       return config;
     }).catch(err => { configPromise = undefined; throw err; });
@@ -135,6 +140,36 @@ async function callback(req, res) {
   ]);
 }
 
+async function readBoundedJson(req, maxBytes = 2048) {
+  if (req.headers['content-type'] !== 'application/json') {
+    throw new ConsentError('json_content_type_required', 415);
+  }
+  if (req.headers['content-encoding'] &&
+      req.headers['content-encoding'] !== 'identity') {
+    throw new ConsentError('encoded_body_not_accepted', 415);
+  }
+  const length = req.headers['content-length'];
+  if (length !== undefined && (!/^\d+$/.test(length) || Number(length) > maxBytes)) {
+    throw new ConsentError('request_body_too_large', 413);
+  }
+  const chunks = [];
+  let total = 0;
+  for await (const chunk of req) {
+    total += chunk.length;
+    if (total > maxBytes) throw new ConsentError('request_body_too_large', 413);
+    chunks.push(chunk);
+  }
+  try {
+    return JSON.parse(Buffer.concat(chunks).toString('utf8'));
+  } catch {
+    throw new ConsentError('invalid_json');
+  }
+}
+
+function consentSession(req) {
+  return requireSession(currentSession(req));
+}
+
 const MIME = {
   js: 'text/javascript; charset=utf-8',
   css: 'text/css; charset=utf-8',
@@ -192,6 +227,32 @@ async function handle(req, res) {
   } else if (req.method === 'GET' && req.url === '/auth/session') {
     const session = currentSession(req);
     json(res, 200, session ? session.profile : { authenticated: false, environment: 'local_development_only' });
+  } else if (req.method === 'GET' && req.url === '/auth/consents') {
+    const session = consentSession(req);
+    json(res, 200, {
+      environment: 'local_development_only',
+      service_calls: false,
+      permissions_enforced: false,
+      catalog: publicConsentCatalog(),
+      receipts: listLocalConsents(session),
+    });
+  } else if (req.method === 'POST' && req.url === '/auth/consents') {
+    if (!isSameOriginAction(req, 'consent')) {
+      json(res, 403, { error: 'cross_origin_action_denied' });
+      return;
+    }
+    const session = consentSession(req);
+    const payload = await readBoundedJson(req);
+    const receipt = recordLocalConsent(session, payload);
+    json(res, 201, { receipt });
+  } else if (req.method === 'DELETE' && /^\/auth\/consents\/(phimail|phicloud)$/.test(path) &&
+             req.url === path) {
+    if (!isSameOriginAction(req, 'revoke')) {
+      json(res, 403, { error: 'cross_origin_action_denied' });
+      return;
+    }
+    const session = consentSession(req);
+    json(res, 200, removeLocalConsent(session, path.split('/').at(-1)));
   } else if (req.method === 'GET' && req.url === '/auth/login') {
     await login(res);
   } else if (req.method === 'GET' && path === '/auth/callback') {
@@ -217,6 +278,11 @@ if (process.env.NODE_ENV === 'production') {
 }
 const server = createServer((req, res) => {
   void handle(req, res).catch(err => {
+    if (err instanceof ConsentError) {
+      if (!res.headersSent) json(res, err.status, { error: err.message });
+      else res.destroy();
+      return;
+    }
     // Do not log callback URLs, codes, secrets, ID tokens or user claims.
     console.error('Local OIDC lab operation failed:', err?.name || 'Error');
     if (!res.headersSent) json(res, 503, { error: 'local_identity_lab_operation_failed' });

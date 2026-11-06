@@ -21,13 +21,17 @@ All checkboxes are implementation evidence targets, not claims that the service 
 - [ ] Complete separate threat review and security hardening for any non-loopback deployment
 - [x] No admin credentials, live tokens, signing keys or user PII committed
 
-## R2 — Consent and PhiCloud bridge
+## R2 — Explicit consent receipts (local-only)
 
-- [ ] Separate local PhiOS identity from optional PhiID linkage
-- [ ] Service-level audience/scope checks and resource ownership
-- [ ] PhiCloud authenticated service listing (different from the R0 registry)
-- [ ] Explicit consent screen, revocation, logout and offline fallback
-- [ ] Account/data export without credential reuse
+- [x] Separate local PhiOS authority from optional PhiID sign-in in the documented contract
+- [x] Add a bounded proposed PhiMail/PhiCloud consent catalog and scope allowlist
+- [x] Require a verified local identity session, explicit acknowledgment and same-origin mutation headers
+- [x] Record and remove short-lived session-bound consent receipts with **no external effect**
+- [x] Test unauthorized access, scope injection, expiry, and external issuer endpoint rejection
+- [ ] Manually verify Keycloak sign-in → consent → local logout on an operator-owned machine
+- [ ] Prove durable consent/audit, real service-side audience/scope validation and revocation (not in R2)
+- [ ] PhiCloud authenticated service listing and a genuine PhiMail OIDC adapter (not in R2)
+- [ ] User-directed account/data export without credential reuse (not in R2)
 
 ## R3 — PhiMail, WebOS, Desktop and Mobile
 

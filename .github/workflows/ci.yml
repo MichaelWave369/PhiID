@@ -1,4 +1,4 @@
-name: PhiID R0/R1 checks
+name: PhiID R0/R1/R2 checks
 
 on:
   push:
@@ -18,8 +18,10 @@ jobs:
           node-version: '22'
       - name: Install dependencies
         run: npm install --no-audit --no-fund
-      - name: Identity contract and loopback route tests
+      - name: Identity, loopback, and consent contract tests
         run: npm test
+      - name: Check local server syntax
+        run: node --check dev/identity-lab/server.mjs
       - name: Build static Account Center
         run: npm run build
 
