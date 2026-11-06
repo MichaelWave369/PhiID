@@ -149,7 +149,7 @@ async function readBoundedJson(req, maxBytes = 2048) {
     throw new ConsentError('encoded_body_not_accepted', 415);
   }
   const length = req.headers['content-length'];
-  if (length !== undefined && (!/^\\d+$/.test(length) || Number(length) > maxBytes)) {
+  if (length !== undefined && (!/^\d+$/.test(length) || Number(length) > maxBytes)) {
     throw new ConsentError('request_body_too_large', 413);
   }
   const chunks = [];
@@ -245,7 +245,7 @@ async function handle(req, res) {
     const payload = await readBoundedJson(req);
     const receipt = recordLocalConsent(session, payload);
     json(res, 201, { receipt });
-  } else if (req.method === 'DELETE' && /^\\/auth\\/consents\\/(phimail|phicloud)$/.test(path) &&
+  } else if (req.method === 'DELETE' && /^\/auth\/consents\/(phimail|phicloud)$/.test(path) &&
              req.url === path) {
     if (!isSameOriginAction(req, 'revoke')) {
       json(res, 403, { error: 'cross_origin_action_denied' });
