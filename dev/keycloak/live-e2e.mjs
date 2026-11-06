@@ -306,6 +306,43 @@ async function verifyPhiIdSession(user, token) {
   const list = await appRequest('/auth/consents',{cookie:sessionCookie});
   assert.equal((await list.json()).receipts.length,1);
 
+  if (process.env.PHIID_LOCAL_LEDGER === '1') {
+    const before = await appRequest('/auth/ledger',{cookie:sessionCookie});
+    assert.equal(before.status,200);
+    assert.equal((await before.json()).enabled,true);
+    const crossOrigin = await appRequest('/auth/ledger',{
+      method:'POST',cookie:sessionCookie,
+      body:{service:'phicloud',scopes:['profile.basic.read'],
+        acknowledged:true,persist_acknowledged:true}
+    });
+    assert.equal(crossOrigin.status,403);
+    const saved = await appRequest('/auth/ledger',{
+      method:'POST',cookie:sessionCookie,action:'ledger-record',
+      body:{service:'phicloud',scopes:['profile.basic.read'],
+        acknowledged:true,persist_acknowledged:true}
+    });
+    assert.equal(saved.status,201,'real OIDC session cannot save local ledger choice');
+    const entry = (await saved.json()).receipt;
+    assert.equal(entry.authority_granted,false);
+    assert.equal(entry.connected,false);
+    assert.equal(entry.service_called,false);
+    const ledger = await appRequest('/auth/ledger',{cookie:sessionCookie});
+    const contents=await ledger.json();
+    assert.equal(contents.active.length,1);
+    assert.equal(contents.history.length,1);
+    assert.equal(contents.active[0].receipt_id,entry.receipt_id);
+    const revoked=await appRequest('/auth/ledger/phicloud',{
+      method:'DELETE',cookie:sessionCookie,action:'ledger-revoke'
+    });
+    assert.equal(revoked.status,200);
+    assert.equal((await revoked.json()).external_token_revoked,false);
+    const history=await appRequest('/auth/ledger',{cookie:sessionCookie});
+    const final=await history.json();
+    assert.equal(final.active.length,0);
+    assert.equal(final.history[0].status,'revoked_choice');
+    assert.equal(final.history[0].revocation_reason,'user_revoked');
+  }
+
   const removed = await appRequest('/auth/consents/phimail',{
     method:'DELETE',cookie:sessionCookie,action:'revoke'
   });
