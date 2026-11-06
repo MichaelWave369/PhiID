@@ -156,6 +156,7 @@ export function openLocalChoiceLedger(dbPath = DEFAULT_DB_PATH) {
 
   function list(session, now = Date.now()) {
     const key = principalKey(session, now);
+    deleteOld.run(now - AUDIT_RETENTION);
     return {
       schema: LEDGER_SCHEMA,
       enabled: true,
