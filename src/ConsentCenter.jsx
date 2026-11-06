@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Check, CircleAlert, Fingerprint, Link2, LockKeyhole, Shield, Trash2 } from 'lucide-react';
 import './consent.css';
+import DurableLedger from '../src/DurableLedger.jsx';
 
 /**
  * R2 consent is NOT remote account linking and NOT an OAuth scope grant.
@@ -120,7 +121,7 @@ export default function ConsentCenter({ authenticated }) {
       <p>This lab records exactly what you consented to, for which proposed service, under an authenticated local identity session. The next step is implementing actual service authorization separately.</p>
     </div>
     <div className="r2-warning"><CircleAlert size={18}/>
-      <p><strong>No live connections.</strong> A receipt is not an OAuth token, mail access, file permission, PhiOS authority, or a remote app integration. All records disappear when this local session expires.</p>
+      <p><strong>No live connections.</strong> A receipt is not an OAuth token, mail access, file permission, PhiOS authority, or a remote app integration. These temporary R2 receipts disappear when your session expires. The separate R6 optional audit below may persist review choices, but never grants access.</p>
     </div>
 
     {!authenticated ? <section className="r2-panel">
@@ -173,6 +174,8 @@ export default function ConsentCenter({ authenticated }) {
         </div>
       </section>}
     </>}
+
+    {authenticated && <DurableLedger authenticated={authenticated} />}
 
     {notice && <div role="status" className="r2-notice"><Shield size={15}/>{notice}</div>}
     <div className="info-strip"><LockKeyhole size={18}/><div>
