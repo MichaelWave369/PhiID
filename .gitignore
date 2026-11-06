@@ -6,3 +6,6 @@ dist/
 !.env.example
 *.log
 .DS_Store
+
+# R6: sensitive local-only consent audit (never commit or deploy)
+dev/identity-lab/.private/
