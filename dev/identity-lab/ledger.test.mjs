@@ -133,6 +133,9 @@ test('private database and directory reject shared permissions and symlinks',t=>
   const linked=join(dir,'linked.sqlite');
   symlinkSync(path,linked);
   assert.throws(()=>openLocalChoiceLedger(linked),/ledger_file_must_be_private/);
+  const dangling=join(dir,'dangling.sqlite');
+  symlinkSync(join(dir,'nonexistent.sqlite'),dangling);
+  assert.throws(()=>openLocalChoiceLedger(dangling),/ledger_file_must_be_private/);
   chmodSync(dir,0o755);
   assert.throws(()=>openLocalChoiceLedger(path),/ledger_directory_must_be_private/);
   chmodSync(dir,0o700);
