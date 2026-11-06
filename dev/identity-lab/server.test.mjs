@@ -71,6 +71,37 @@ test('R1 server denies remote/CSRF access and has no anonymous principal', async
   assert.equal(missingFlow.status, 400);
   assert.equal(JSON.parse(missingFlow.body).error, 'missing_or_expired_login_flow');
 
+
+  const noIdentity = await request('/auth/consents');
+  assert.equal(noIdentity.status, 401);
+  assert.equal(JSON.parse(noIdentity.body).error, 'verified_local_session_required');
+
+  const crossSiteConsent = await request('/auth/consents', {
+    method: 'POST',
+    headers: { origin: 'https://attacker.invalid', 'x-phiid-action': 'consent',
+      'content-type': 'application/json' },
+  });
+  assert.equal(crossSiteConsent.status, 403);
+
+  const noAuthConsent = await request('/auth/consents', {
+    method: 'POST',
+    headers: { origin: ORIGIN, 'x-phiid-action': 'consent',
+      'content-type': 'application/json' },
+  });
+  assert.equal(noAuthConsent.status, 401);
+
+  const crossSiteRevoke = await request('/auth/consents/phimail', {
+    method: 'DELETE',
+    headers: { origin: 'https://attacker.invalid', 'x-phiid-action': 'revoke' },
+  });
+  assert.equal(crossSiteRevoke.status, 403);
+
+  const noAuthRevoke = await request('/auth/consents/phicloud', {
+    method: 'DELETE',
+    headers: { origin: ORIGIN, 'x-phiid-action': 'revoke' },
+  });
+  assert.equal(noAuthRevoke.status, 401);
+
   const absent = await request('/v1/users');
   assert.equal(absent.status, 404);
   const forbiddenQuery = await request('/auth/session?probe=true');
