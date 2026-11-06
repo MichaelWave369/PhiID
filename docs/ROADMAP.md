@@ -67,3 +67,15 @@ All checkboxes are implementation evidence targets, not claims that the service 
 - [ ] Obtain passing green R5 Keycloak test run for the exact pinned PhiMail SHA
 - [ ] Add resilience tests for offline/rate-limited OIDC provider and mutable test-user attributes
 - [ ] Deploy only after separate production-grade security, HTTPS, revocation and recovery reviews
+
+## R6 — Durable local consent review history (opt-in only)
+
+- [x] Add an opt-in local SQLite audit ledger, disabled by default
+- [x] Bind each record to a real verified OIDC issuer/subject, stored only as a pseudonymous index
+- [x] Require separate explicit on-disk consent acknowledgment for fixed PhiMail/PhiCloud profile proposal
+- [x] Implement private owner-only SQLite file, revocation history, bounded retention and restart persistence tests
+- [x] Preserve independent R2 session receipts; no external service access, token issuance, mailbox claims or PhiOS authority
+- [x] Extend disposable Keycloak CI to test recording and revoking an R6 choice with a genuine signed OIDC session
+- [ ] Verify R6 CI passes, including real provider + new SQLite tests
+- [ ] R7: implement service-side **audience/scope/owner validation** using vetted standards, not ledger-as-authority
+- [ ] Later: explicit token revocation propagation, user data export/delete and production security review
