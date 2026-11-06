@@ -58,3 +58,12 @@ All checkboxes are implementation evidence targets, not claims that the service 
 - [ ] Confirm GitHub Actions live Keycloak smoke passes against the pinned image
 - [ ] Run end-to-end PhiMail **application** login in a separate test rig and verify cross-app session isolation
 - [ ] Audit and harden any network-facing account provider before production signup
+
+## R5 — Real independent PhiID/PhiMail app sign-ins in CI
+
+- [x] Add pinned, reviewable PhiMail checkout to separate disposable Keycloak CI workflow
+- [x] Exercise actual PhiMail Node bridge and Vite proxy, not just an OIDC client mock
+- [x] Test different app-local sessions, callback replay refusal, independent logout and no Gmail read authority
+- [ ] Obtain passing green R5 Keycloak test run for the exact pinned PhiMail SHA
+- [ ] Add resilience tests for offline/rate-limited OIDC provider and mutable test-user attributes
+- [ ] Deploy only after separate production-grade security, HTTPS, revocation and recovery reviews
