@@ -21,3 +21,13 @@ PhiID is a **security-critical identity project**, but the R0 site is **not a lo
 - PKCE verifier, state and nonce stay server-side and short-lived. No token material in browser JS or storage. Display-only verified profiles never grant PhiCloud access or PhiOS effect authority.
 - A valid local session proves only a local development OIDC sign-in at that moment. It does not imply enterprise-grade recovery, production identity, revocation or account lifecycle support.
 - All tests in CI are automated contract/route checks; end-to-end Keycloak login remains a separately documented manual test until an isolated integration rig exists.
+
+## R2 consent receipt boundaries
+
+- No receipt issued by `dev/identity-lab/consent.mjs` may authorize any remote or local action, token minting, data access, file access, mailbox access or PhiOS effects.
+- Service and proposed scopes must remain fixed allowlists. Do not use wildcard scopes, client-supplied subject IDs, arbitrary service URLs or runtime-discovered permissions.
+- Require already-verified local R1 identity to record a receipt; user must explicitly acknowledge the scope and purpose.
+- Consent receipts are volatile session state, not durable evidence of consent, account linkage or provider revocation.
+- Removal only deletes a local receipt. Clearly report that no external access token was revoked.
+- GitHub Pages must remain a non-authenticating preview; never load local consent controls or cookies on public Pages.
+- The R1 Identity Lab's pinned discovery endpoint and issuer must not be weakened to allow arbitrary identity provider URLs in development.
