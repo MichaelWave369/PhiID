@@ -12,6 +12,8 @@ import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import * as oidc from 'openid-client';
 import { ISSUER, ORIGIN, REDIRECT_URI } from '../identity-lab/security.mjs';
 
@@ -375,10 +377,17 @@ async function main() {
   }
 }
 
-await main().catch(err=>{
-  // Do not log identity tokens, callback URLs, HTML, username or passwords.
-  console.error('Local Keycloak E2E FAILED:',err?.name || 'Error',
-    // Show only an authored assertion summary, never raw provider/network errors.
-    err?.name==='AssertionError' ? String(err.message).slice(0,160) : 'inspect controlled CI steps');
-  process.exitCode=1;
-});
+// Reusable real-provider helpers for a separate dual-application CI smoke.
+// Importing them never starts or modifies an account by itself.
+export { waitForKeycloak, adminToken, adminJson, createDisposableUser,
+  getKeycloakCode, appRequest, withBridge, checkEndpoint };
+
+// Preserve the exact R4 standalone behavior when invoked as a script.
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  await main().catch(err=>{
+    // Do not log identity tokens, callback URLs, HTML, username or passwords.
+    console.error('Local Keycloak E2E FAILED:',err?.name || 'Error',
+      err?.name==='AssertionError' ? String(err.message).slice(0,160) : 'inspect controlled CI steps');
+    process.exitCode=1;
+  });
+}
