@@ -102,3 +102,13 @@ test('OIDC discovery endpoints must stay inside the expected loopback realm', ()
     { ...good, token_endpoint: 'https://127.0.0.1:8080/realms/phiid-dev/protocol/openid-connect/token' }
   ]) assert.throws(() => assertLoopbackProviderMetadata(invalid));
 });
+
+test('R6 durable choice mutations require explicit same-origin action and deny cross-site replay',()=>{
+  const req={headers:{origin:ORIGIN,'sec-fetch-site':'same-origin',
+    'x-phiid-action':'ledger-record'}};
+  assert.equal(isSameOriginAction(req,'ledger-record'),true);
+  assert.equal(isSameOriginAction(req,'ledger-revoke'),false);
+  assert.equal(isSameOriginAction({...req,headers:{...req.headers,origin:'https://attacker.invalid'}},'ledger-record'),false);
+  assert.equal(isSameOriginAction({...req,headers:{...req.headers,'sec-fetch-site':'cross-site'}},'ledger-record'),false);
+  assert.equal(isSameOriginAction({...req,headers:{...req.headers,'x-phiid-action':'ledger-revoke'}},'ledger-revoke'),true);
+});
