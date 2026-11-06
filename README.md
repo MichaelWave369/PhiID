@@ -43,7 +43,7 @@ Read [the R2 consent contract](docs/R2_LOCAL_CONSENT_CONTRACT.md), including exa
 
 ### R3: Independent PhiMail OIDC client
 
-The local Keycloak test realm now includes a second, separately registered `phimail-phiid-dev` client, with an exact `http://localhost:5173/auth/phiid/callback` redirect. It uses the same **development** issuer but not the same application cookie, token or authorization scope. PhiMail's companion R2B feature branch implements its own optional loopback relying party.
+The local Keycloak test realm now includes a second, separately registered `phimail-bff-dev` client, with an exact `http://127.0.0.1:5173/auth/phiid/callback` redirect. It uses the same **development** issuer but not the same application cookie, token or authorization scope. PhiMail's companion R2B feature branch implements its own optional loopback relying party.
 
 The verified issuer/subject pair can be compared after separately signing into both apps with the same disposable Keycloak user. This **does not** grant Gmail/mailbox, PhiCloud or PhiOS access.
 
