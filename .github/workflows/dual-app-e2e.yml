@@ -1,0 +1,82 @@
+name: PhiID + PhiMail real dual-app OIDC smoke
+
+on:
+  pull_request:
+    paths:
+      - 'dev/keycloak/**'
+      - 'dev/identity-lab/**'
+      - 'docs/R5_*'
+      - 'package.json'
+      - '.github/workflows/dual-app-e2e.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'dev/keycloak/**'
+      - 'dev/identity-lab/**'
+      - 'package.json'
+      - '.github/workflows/dual-app-e2e.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dual-app:
+    name: Real Keycloak, PhiID and PhiMail bridges
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - name: Check out PhiID
+        uses: actions/checkout@v4
+
+      # Pinned reviewable PhiMail snapshot. Update only through a reviewed PR.
+      # No workflow execution from the external checkout, only Node/Vite dev app.
+      - name: Check out canonical PhiMail
+        uses: actions/checkout@v4
+        with:
+          repository: MichaelWave369/PhiMail
+          ref: 14e86b05bc73ffab68d92ebd1bd722e331879e09
+          path: integration/phimail
+          persist-credentials: false
+
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install PhiID dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Install pinned PhiMail test app dependencies
+        working-directory: integration/phimail
+        run: npm install --no-audit --no-fund
+
+      - name: Validate real dual-application harness syntax
+        run: |
+          node --check dev/keycloak/live-e2e.mjs
+          node --check dev/keycloak/dual-app-e2e.mjs
+
+      - name: Generate ephemeral Keycloak administrator
+        shell: bash
+        run: |
+          set -euo pipefail
+          password="$(openssl rand -hex 32)"
+          echo "::add-mask::${password}"
+          {
+            echo "KC_BOOTSTRAP_ADMIN_USERNAME=ci-admin"
+            echo "KC_BOOTSTRAP_ADMIN_PASSWORD=${password}"
+          } >> "${GITHUB_ENV}"
+
+      - name: Start disposable Keycloak on IPv4 loopback
+        run: docker compose -f dev/keycloak/compose.yaml up -d
+
+      - name: Verify two real app bridges and independent sessions
+        env:
+          PHIID_E2E_ENABLE: '1'
+          PHIID_DUAL_APP_E2E: '1'
+          NODE_ENV: test
+        run: node dev/keycloak/dual-app-e2e.mjs
+
+      - name: Stop and remove Keycloak container
+        if: always()
+        run: docker compose -f dev/keycloak/compose.yaml down --remove-orphans
