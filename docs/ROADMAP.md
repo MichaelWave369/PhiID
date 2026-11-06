@@ -49,3 +49,12 @@ All checkboxes are implementation evidence targets, not claims that the service 
 - [ ] Deployment proof and explicit go/no-go before public sign-ups
 
 **Never claim that a visual identity preview or passing unit test proves a secure identity service.**
+
+## R3 — Independent PhiMail local sign-in (new foundation)
+
+- [x] Register a second OIDC public client `phimail-phiid-dev` in the local Keycloak realm import
+- [x] Restrict each client to a distinct exact localhost redirect and PKCE S256; test for no wildcard or password grant
+- [x] Document independence from Gmail email sessions and PhiOS authority
+- [ ] Verify two end-to-end authorization-code sign-ins against a running Keycloak test user
+- [ ] Confirm each app can end its own session without modifying the other application's session
+- [ ] Transition to separately reviewed HTTPS deployments and hardened multi-user session design (not in R3)
