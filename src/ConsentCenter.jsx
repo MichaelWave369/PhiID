@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Check, CircleAlert, Fingerprint, Link2, LockKeyhole, Shield, Trash2 } from 'lucide-react';
 import './consent.css';
-import DurableLedger from '../src/DurableLedger.jsx';
+import DurableLedger from './DurableLedger.jsx';
 
 /**
  * R2 consent is NOT remote account linking and NOT an OAuth scope grant.
