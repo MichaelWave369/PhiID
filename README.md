@@ -41,6 +41,14 @@ These are **explicitly non-authoritative, not OAuth grants and not remote connec
 
 Read [the R2 consent contract](docs/R2_LOCAL_CONSENT_CONTRACT.md), including exactly what is still unverified.
 
+### R3: Independent PhiMail OIDC client
+
+The local Keycloak test realm now includes a second, separately registered `phimail-phiid-dev` client, with an exact `http://localhost:5173/auth/phiid/callback` redirect. It uses the same **development** issuer but not the same application cookie, token or authorization scope. PhiMail's companion R2B feature branch implements its own optional loopback relying party.
+
+The verified issuer/subject pair can be compared after separately signing into both apps with the same disposable Keycloak user. This **does not** grant Gmail/mailbox, PhiCloud or PhiOS access.
+
+Read [the R3 dual-client test plan](docs/R3_PHIMAIL_DUAL_CLIENT.md). End-to-end real Keycloak login remains unverified until manually tested.
+
 ### R1: Optional local identity lab
 
 The R1 development branch adds an actual standards-based **localhost-only** identity flow with Keycloak and `openid-client` on a small Node bridge. It uses authorization code + PKCE S256, random state/nonce, exact local issuer and callback, short-lived HttpOnly session cookies, and discards OAuth tokens without giving them to browser JavaScript.
