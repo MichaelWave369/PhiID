@@ -9,11 +9,11 @@ test('two separately registered clients share the local issuer but no redirect/s
   assert.equal(realm.registrationAllowed, false);
   assert.equal(realm.sslRequired, 'none');
   const ids = realm.clients.map(c=>c.clientId);
-  assert.deepEqual(ids.sort(), ['phiid-bff-dev', 'phimail-phiid-dev'].sort());
+  assert.deepEqual(ids.sort(), ['phiid-bff-dev', 'phimail-bff-dev'].sort());
   const first=realm.clients.find(c=>c.clientId==='phiid-bff-dev');
-  const mail=realm.clients.find(c=>c.clientId==='phimail-phiid-dev');
+  const mail=realm.clients.find(c=>c.clientId==='phimail-bff-dev');
   assert.deepEqual(first.redirectUris, ['http://127.0.0.1:8786/auth/callback']);
-  assert.deepEqual(mail.redirectUris, ['http://localhost:5173/auth/phiid/callback']);
+  assert.deepEqual(mail.redirectUris, ['http://127.0.0.1:5173/auth/phiid/callback']);
   assert.notEqual(first.redirectUris[0], mail.redirectUris[0]);
 });
 
