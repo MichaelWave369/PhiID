@@ -4,7 +4,7 @@
 
 PhiID is the proposed **sovereign account and identity layer** for PhiOS Desktop, PhiOS WebOS, PhiOS Mobile, PhiMail, PhiCloud and opt-in Phi ecosystem applications.
 
-> **Status: R1 local identity experiment.** The public GitHub Pages site remains a clearly labeled non-authenticating preview. An optional localhost-only Keycloak + OpenID Connect lab has been added on a development branch; it has no production account registration, PhiOS action authority, hosted PhiMail delivery or PhiCloud permissions. Full end-to-end sign-in has not yet been confirmed on operator hardware.
+> **Status: R2 consent contract prototype on top of the R1 local identity lab.** The public GitHub Pages site remains a clearly labeled non-authenticating preview. An optional localhost-only Keycloak + OpenID Connect lab has been added on a development branch; it has no production account registration, PhiOS action authority, hosted PhiMail delivery or PhiCloud permissions. Full end-to-end sign-in has not yet been confirmed on operator hardware.
 
 ## Core rules
 
@@ -32,6 +32,14 @@ npm run build
 ~~~
 
 For a repository configured to deploy GitHub Pages via Actions, the planned static preview address is https://michaelwave369.github.io/PhiID/ after a successful deployment. It is **not** a production identity endpoint. The browser bundle intentionally contains zero signing keys, secrets, tokens or user records.
+
+### R2: Local consent receipts, not live app linking
+
+The R2 branch adds a **Consent Lab** view to the local identity bridge (not GitHub Pages). Only a verified local Keycloak session can record and remove short-lived proposed PhiMail and PhiCloud consent receipts.
+
+These are **explicitly non-authoritative, not OAuth grants and not remote connections**. They have tightly allowlisted proposed scopes, session-limited expiry and clear removal semantics. They never call PhiMail or PhiCloud, send mail, read files or authorize PhiOS actions.
+
+Read [the R2 consent contract](docs/R2_LOCAL_CONSENT_CONTRACT.md), including exactly what is still unverified.
 
 ### R1: Optional local identity lab
 
