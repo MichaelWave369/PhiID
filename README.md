@@ -16,6 +16,12 @@ PhiID is the proposed **sovereign account and identity layer** for PhiOS Desktop
 - **No homebrew cryptography or identity server.** Future sign-in must be built on audited OpenID Connect and WebAuthn-capable software, with correct client and backend token validation.
 - **Portability over captivity.** User-directed export and eventual recovery/migration mechanisms are first-class requirements.
 
+## R5: Real PhiID ↔ PhiMail app-bridge integration test
+
+The dedicated [R5 dual-app Keycloak CI](.github/workflows/dual-app-e2e.yml) checks out a **pinned PhiMail commit** in an isolated test directory, runs its real Node bridge through its real Vite same-origin proxy, and completes separate signed Keycloak logins with PhiID and PhiMail. It exercises session independence, logout, replay refusal and Gmail-read denial without an independent mailbox token.
+
+**Development testing only.** R5 does not deploy account hosting, grant access to PhiCloud, run Gmail OAuth with real users or authorize PhiOS local actions. See [R5 real dual-app verification](docs/R5_REAL_DUAL_APP_KEYCLOAK.md).
+
 ## R4: Real disposable Keycloak integration test
 
 The dedicated [R4 Keycloak smoke workflow](.github/workflows/keycloak-e2e.yml) boots a real localhost-only Keycloak server with an ephemeral admin and test user. It exercises the real PhiID browser authorization-code flow, validates signed OIDC identity through the vetted client, checks a non-authoritative R2 consent receipt, tests logout/replay denial, and separately verifies the second registered PhiMail client can validate a real ID token for the same user.
