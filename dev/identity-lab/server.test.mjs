@@ -102,6 +102,21 @@ test('R1 server denies remote/CSRF access and has no anonymous principal', async
   });
   assert.equal(noAuthRevoke.status, 401);
 
+
+  const anonLedger = await request('/auth/ledger');
+  assert.equal(anonLedger.status, 401);
+
+  const disabledWrite = await request('/auth/ledger', {
+    method:'POST',headers:{origin:ORIGIN,'x-phiid-action':'ledger-record','content-type':'application/json'}
+  });
+  assert.equal(disabledWrite.status, 404);
+  assert.equal(JSON.parse(disabledWrite.body).error,'local_choice_ledger_disabled');
+
+  const disabledRevoke = await request('/auth/ledger/phimail', {
+    method:'DELETE',headers:{origin:ORIGIN,'x-phiid-action':'ledger-revoke'}
+  });
+  assert.equal(disabledRevoke.status, 404);
+
   const absent = await request('/v1/users');
   assert.equal(absent.status, 404);
   const forbiddenQuery = await request('/auth/session?probe=true');
