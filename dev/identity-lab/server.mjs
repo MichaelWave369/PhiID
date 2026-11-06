@@ -42,6 +42,7 @@ function getOidc() {
     configPromise = oidc.discovery(
       new URL(ISSUER), CLIENT_ID,
       { token_endpoint_auth_method: 'none' }, oidc.None(),
+      { execute: [oidc.allowInsecureRequests], timeout: 8 }, // localhost HTTP only
     ).then(config => {
       if (config.serverMetadata().issuer !== ISSUER) throw new Error('issuer mismatch');
       if (!config.serverMetadata().supportsPKCE()) throw new Error('S256 PKCE support is required');
