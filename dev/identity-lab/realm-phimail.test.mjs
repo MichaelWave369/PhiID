@@ -25,3 +25,36 @@ test('development clients contain no secrets or configured mailbox grants',()=>{
   assert.equal(c.serviceAccountsEnabled,false);
  }
 });
+
+
+test('R3 has exactly two separate public clients, no accidental third identity integration',()=>{
+ const ids=realm.clients.map(client=>client.clientId).sort();
+ assert.deepEqual(ids,['phiid-bff-dev','phimail-bff-dev']);
+ assert.notEqual(realm.clients[0].redirectUris[0],realm.clients[1].redirectUris[0]);
+ assert.equal(realm.registrationAllowed,false);
+ assert.equal(realm.sslRequired,'none'); // dev-only, not a production TLS setting
+});
+
+test('R3 clients enforce PKCE S256 and never use wildcard redirects or embedded credentials',()=>{
+ for(const client of realm.clients){
+  assert.equal(client.enabled,true);
+  assert.equal(client.protocol,'openid-connect');
+  assert.equal(client.publicClient,true);
+  assert.equal(client.bearerOnly,false);
+  assert.equal(client.standardFlowEnabled,true);
+  assert.equal(client.implicitFlowEnabled,false);
+  assert.equal(client.directAccessGrantsEnabled,false);
+  assert.equal(client.serviceAccountsEnabled,false);
+  assert.deepEqual(client.webOrigins,[]);
+  assert.equal(client.attributes['pkce.code.challenge.method'],'S256');
+  assert.ok(client.redirectUris.every(uri=>!uri.includes('*')));
+  assert.equal(Object.hasOwn(client,'secret'),false);
+  assert.equal(Object.hasOwn(client,'clientAuthenticatorType'),false);
+ }
+});
+
+test('R3 realm import contains no seeded users, passwords, or mail service configuration',()=>{
+ for(const key of ['users','credentials','smtpServer']) {
+  assert.equal(Object.hasOwn(realm,key),false);
+ }
+});
