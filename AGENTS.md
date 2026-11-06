@@ -39,3 +39,12 @@ PhiID is a **security-critical identity project**, but the R0 site is **not a lo
 - The smoke script must never log OAuth codes, ID/access tokens, cookies, passwords or full callback URLs.
 - Accept redirects only to the hard-coded loopback Keycloak issuer or each exact registered client callback; prevent arbitrary URL/proxy input.
 - A green R4 smoke run proves only the test's stated scope. PhiMail's own app bridge, production deployment, passkeys, Gmail authorization and PhiOS local effect enforcement remain separately unverified.
+
+## R5 real two-app test invariants
+
+- Real application sign-in tests run **only in disposable CI**, never with production users or mailbox credentials.
+- Pin external PhiMail source to a reviewed commit SHA; never execute unreviewed third-party PR code with GitHub tokens or elevated secrets. This test has only ephemeral localhost credentials and read-only repository access.
+- PhiID and PhiMail independently execute PKCE/nonce/state OIDC flows against the same local issuer. Each app owns its own session and logout.
+- Never use PhiID identity as evidence of a Gmail OAuth session, mailbox authorization, PhiCloud access, consent enforcement or PhiOS effect approval.
+- The R5 test must complete through PhiMail's real Vite proxy and backend; validating a synthetic independent OIDC exchange alone is only the earlier R4 milestone.
+- Keep the real-provider CI output redacted and never log signed tokens, secrets, callback URLs, or Keycloak form bodies.
