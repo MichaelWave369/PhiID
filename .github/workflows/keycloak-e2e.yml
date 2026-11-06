@@ -53,8 +53,13 @@ jobs:
       - name: Real OIDC authorization-code and consent smoke
         env:
           PHIID_E2E_ENABLE: '1'
+          PHIID_LOCAL_LEDGER: '1'
           NODE_ENV: 'test'
         run: node dev/keycloak/live-e2e.mjs
+
+      - name: Delete disposable R6 local-choice SQLite database
+        if: always()
+        run: rm -rf dev/identity-lab/.private
 
       - name: Remove Keycloak test container
         if: always()
