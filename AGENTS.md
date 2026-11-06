@@ -31,3 +31,11 @@ PhiID is a **security-critical identity project**, but the R0 site is **not a lo
 - Removal only deletes a local receipt. Clearly report that no external access token was revoked.
 - GitHub Pages must remain a non-authenticating preview; never load local consent controls or cookies on public Pages.
 - The R1 Identity Lab's pinned discovery endpoint and issuer must not be weakened to allow arbitrary identity provider URLs in development.
+
+## R3 PhiMail relying-party boundary
+
+- Never make `phiid-bff-dev` and `phimail-phiid-dev` share a session cookie, client ID, PKCE flow state, token, redirect URI or implicit permission.
+- Both clients are **development-only**, and may share an OIDC issuer/subject for an independently authenticated test user. A matching subject is **not** an authorization grant.
+- Only the operator-controlled local Keycloak realm may be used with the existing HTTP exception. Public deployments require a new HTTPS identity/provider model.
+- No Gmail scopes, remote PhiCloud scopes or native PhiOS effects are allowed merely because the user authenticated to PhiID.
+- A realm import is not an existing-realm migration. Do not silently overwrite users or credentials to add the second client.
