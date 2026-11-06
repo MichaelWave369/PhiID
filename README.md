@@ -16,6 +16,12 @@ PhiID is the proposed **sovereign account and identity layer** for PhiOS Desktop
 - **No homebrew cryptography or identity server.** Future sign-in must be built on audited OpenID Connect and WebAuthn-capable software, with correct client and backend token validation.
 - **Portability over captivity.** User-directed export and eventual recovery/migration mechanisms are first-class requirements.
 
+## R6: Optional persistent review-choice history (local-only)
+
+The **Consent Lab** now includes an opt-in private SQLite ledger for durable *consent-review choices*. It uses only a verified local Keycloak session, strict proposed service/scope allowlists, explicit acknowledgment of on-disk storage, 30-day choice expiry and revocation history. File permissions are private, it is disabled by default, and existing R2 session receipts remain separate.
+
+**A persisted choice is not an app connection, authorization token, mailbox permission, cloud grant, or PhiOS action approval.** No service uses it to authorize resources. Read [R6 storage, privacy and limitations](docs/R6_DURABLE_LOCAL_CONSENT_LEDGER.md).
+
 ## R5: Real PhiID ↔ PhiMail app-bridge integration test
 
 The dedicated [R5 dual-app Keycloak CI](.github/workflows/dual-app-e2e.yml) checks out a **pinned PhiMail commit** in an isolated test directory, runs its real Node bridge through its real Vite same-origin proxy, and completes separate signed Keycloak logins with PhiID and PhiMail. It exercises session independence, logout, replay refusal and Gmail-read denial without an independent mailbox token.
