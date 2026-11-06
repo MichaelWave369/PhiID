@@ -7,7 +7,7 @@
  */
 import { DatabaseSync } from 'node:sqlite';
 import { createHash } from 'node:crypto';
-import { mkdirSync, lstatSync, existsSync, chmodSync } from 'node:fs';
+import { mkdirSync, lstatSync, chmodSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { requireSession, validateConsentRequest, ConsentError, SERVICE_CATALOG } from './consent.mjs';
@@ -18,16 +18,28 @@ export const MAX_CHOICE_AGE = 30 * 24 * 60 * 60_000;
 export const AUDIT_RETENTION = 90 * 24 * 60 * 60_000;
 export const DEFAULT_DB_PATH = fileURLToPath(new URL('./.private/local-consent.sqlite', import.meta.url));
 
+function privatePathStat(path) {
+  try { return lstatSync(path); }
+  catch (error) {
+    if (error?.code === 'ENOENT') return null;
+    throw error;
+  }
+}
 function checkPrivateDirectory(path) {
-  if (!existsSync(path)) mkdirSync(path, { recursive: true, mode: 0o700 });
-  const stat = lstatSync(path);
-  if (!stat.isDirectory() || stat.isSymbolicLink() || (stat.mode & 0o077) !== 0) {
+  let stat = privatePathStat(path);
+  if (!stat) {
+    mkdirSync(path, { recursive: true, mode: 0o700 });
+    stat = privatePathStat(path);
+  }
+  if (!stat?.isDirectory() || stat.isSymbolicLink() || (stat.mode & 0o077) !== 0) {
     throw new Error('ledger_directory_must_be_private_and_not_symlink');
   }
 }
 function checkPrivateFile(path) {
-  if (!existsSync(path)) return;
-  const stat = lstatSync(path);
+  // lstat (NOT exists) also sees dangling symlinks. Never follow a link to
+  // an outside path just because its target has not been created yet.
+  const stat = privatePathStat(path);
+  if (!stat) return;
   if (!stat.isFile() || stat.isSymbolicLink() || (stat.mode & 0o077) !== 0) {
     throw new Error('ledger_file_must_be_private_and_not_symlink');
   }
