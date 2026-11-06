@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Activity, ArrowRight, ArrowUpRight, Check, ChevronRight, Cloud, Code2,
   Database, Download, Fingerprint, Globe2, HardDrive, KeyRound, Layers3,
@@ -6,6 +6,8 @@ import {
   Sparkles, Unplug, UserRound, WifiOff
 } from 'lucide-react';
 import { DEMO_ACCOUNT, createDemoExport, previewIdentityKey, validatePreviewAccount } from './identity.js';
+
+const LOCAL_AUTH_LAB = typeof window !== 'undefined' && window.location.origin === 'http://127.0.0.1:8786';
 
 const NAV = [
   { id: 'overview', name: 'Overview', icon: Layers3 },
@@ -66,6 +68,34 @@ function App() {
   const [alias, setAlias] = useState(DEMO_ACCOUNT.preferred_username);
   const [previewLinks, setPreviewLinks] = useState([]);
   const [notice, setNotice] = useState('');
+  const [localSession, setLocalSession] = useState(null);
+
+  useEffect(() => {
+    if (!LOCAL_AUTH_LAB) return;
+    let active = true;
+    fetch('/auth/session', { credentials: 'same-origin', cache: 'no-store' })
+      .then(response => {
+        if (!response.ok) throw new Error('local session unavailable');
+        return response.json();
+      })
+      .then(profile => { if (active) setLocalSession(profile); })
+      .catch(() => { if (active) setNotice('Local identity bridge is unavailable.'); });
+    return () => { active = false; };
+  }, []);
+
+  async function endLocalSession() {
+    try {
+      const response = await fetch('/auth/logout', {
+        method: 'POST', headers: { 'X-PhiID-Action': 'logout' },
+        credentials: 'same-origin',
+      });
+      if (!response.ok) throw new Error('logout refused');
+      setLocalSession({ authenticated: false });
+      setNotice('Local bridge session ended. Keycloak SSO may still be active.');
+    } catch {
+      setNotice('Could not end the local session.');
+    }
+  }
 
   const account = useMemo(() => {
     const candidate = (alias.trim() || DEMO_ACCOUNT.preferred_username).slice(0, 64);
@@ -127,7 +157,9 @@ function App() {
     <main className="content">
       <div className="topbar">
         <div className="breadcrumb"><span>PHI ECOSYSTEM</span><ChevronRight size={13}/><strong>IDENTITY CENTER</strong></div>
-        <Pill color="amber"><span className="live-dot"/> STATIC DEMO · NO LOGIN</Pill>
+        {LOCAL_AUTH_LAB
+          ? <Pill color="amber"><span className="live-dot"/> LOCAL IDENTITY LAB · DEV ONLY</Pill>
+          : <Pill color="amber"><span className="live-dot"/> STATIC DEMO · NO LOGIN</Pill>}
       </div>
       <div className="content-body">
         {tab === 'overview' && <>
@@ -144,14 +176,20 @@ function App() {
           <div className="section-caption"><span>IDENTITY PREVIEW</span><span>00 / R0</span></div>
           <section className="overview-grid">
             <article className="account-card">
-              <div className="card-topline"><span>PHI ACCOUNT</span><Pill color="amber">SYNTHETIC</Pill></div>
+              <div className="card-topline"><span>PHI ACCOUNT</span><Pill color="amber">{localSession?.authenticated ? 'VERIFIED LOCAL OIDC' : 'SYNTHETIC'}</Pill></div>
               <div className="profile-row">
                 <div className="avatar"><UserRound size={26}/></div>
-                <div><h3>{account.preferred_username}</h3><p>Preview persona · not signed in</p></div>
+                <div><h3>{localSession?.authenticated ? (localSession.preferred_username || 'Local identity') : account.preferred_username}</h3><p>{localSession?.authenticated ? 'Verified local dev session · not OS authorization' : 'Preview persona · not signed in'}</p></div>
               </div>
-              <div className="account-property"><span>Subject</span><code>{account.sub}</code></div>
+              <div className="account-property"><span>Subject</span><code>{localSession?.authenticated ? localSession.sub : account.sub}</code></div>
               <div className="account-property"><span>Email</span><strong>Not provisioned</strong></div>
-              <div className="account-property"><span>Identity provider</span><strong>Not deployed</strong></div>
+              <div className="account-property"><span>Identity provider</span><strong>{localSession?.authenticated ? 'Local Keycloak DEV' : 'Not signed in'}</strong></div>
+              {LOCAL_AUTH_LAB && <div className="auth-controls">
+                {localSession?.authenticated
+                  ? <button type="button" className="primary-btn" onClick={endLocalSession}>End local session</button>
+                  : <button type="button" className="primary-btn" onClick={() => window.location.assign('/auth/login')}>Sign in to local Keycloak <ArrowRight size={15}/></button>}
+                <small>Loopback-only test. Never grants PhiOS, PhiMail or PhiCloud permissions.</small>
+              </div>}
               <button type="button" className="text-action" onClick={() => navigate('portability')}>View sample metadata <ArrowRight size={15}/></button>
             </article>
             <article className="principles-card">
