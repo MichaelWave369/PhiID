@@ -18,11 +18,17 @@ import {
   ConsentError, publicConsentCatalog, recordLocalConsent,
   listLocalConsents, removeLocalConsent, requireSession,
 } from './consent.mjs';
+import {
+  loadPocketApprovalConfig,stagePocketReview,approveStagedPocket
+} from './pocket-approval.mjs';
 
 const DIST = resolve(fileURLToPath(new URL('../../dist/', import.meta.url)));
 const flows = new Map();
 const sessions = new Map();
 let configPromise;
+// Optional, operator-owned LOCAL dev approval signer. Disabled by default.
+const pocketConfig=process.env.PHIID_POCKET_APPROVAL_CONFIG
+  ?loadPocketApprovalConfig(process.env.PHIID_POCKET_APPROVAL_CONFIG):null;
 
 function json(res, status, obj, cookies = []) {
   const data = Buffer.from(JSON.stringify(obj));
@@ -133,7 +139,7 @@ async function callback(req, res) {
   const profile = publicProfile(claims);
   // NEVER keep token contents in frontend JavaScript, cookies or exported JSON.
   // We discard the access token and refresh token, so this lab cannot call PhiCloud.
-  sessions.set(sessionId, { profile, expires: Date.now() + remaining });
+  sessions.set(sessionId, { profile, expires: Date.now() + remaining, createdAt:Date.now() });
   redirect(res, '/PhiID/', [
     cookieHeader('phiid_flow', '', 0),
     cookieHeader('phiid_session', sessionId, Math.max(1, Math.floor(remaining / 1000))),
@@ -253,6 +259,36 @@ async function handle(req, res) {
     }
     const session = consentSession(req);
     json(res, 200, removeLocalConsent(session, path.split('/').at(-1)));
+  } else if (req.method === 'GET' && req.url === '/auth/pocket/status') {
+    const s=currentSession(req);
+    json(res,200,{environment:'local_development_only',enabled:!!pocketConfig,
+      authenticated:s?.profile?.authenticated===true,
+      permitted:!!(s&&pocketConfig&&pocketConfig.allowedSubjects.includes(s.profile.sub)),
+      executionsPerformed:false});
+  } else if (req.method === 'POST' && req.url === '/auth/pocket/review') {
+    if(!pocketConfig){json(res,404,{error:'pocket_approval_lab_disabled'});return;}
+    if(!isSameOriginAction(req,'pocket-review')){
+      json(res,403,{error:'cross_origin_action_denied'});return;
+    }
+    const session=consentSession(req);
+    const payload=await readBoundedJson(req,8192);
+    json(res,200,stagePocketReview(session,payload,pocketConfig));
+  } else if (req.method === 'POST' && req.url === '/auth/pocket/approve') {
+    if(!pocketConfig){json(res,404,{error:'pocket_approval_lab_disabled'});return;}
+    if(!isSameOriginAction(req,'pocket-approve')){
+      json(res,403,{error:'cross_origin_action_denied'});return;
+    }
+    const session=consentSession(req);
+    const payload=await readBoundedJson(req);
+    json(res,200,approveStagedPocket(session,payload,pocketConfig));
+  } else if (req.method === 'POST' && req.url === '/auth/pocket/cancel') {
+    if(!pocketConfig){json(res,404,{error:'pocket_approval_lab_disabled'});return;}
+    if(!isSameOriginAction(req,'pocket-cancel')){
+      json(res,403,{error:'cross_origin_action_denied'});return;
+    }
+    const session=consentSession(req);
+    delete session.pendingPocket;
+    json(res,200,{cancelled:true,executionAuthorized:false});
   } else if (req.method === 'GET' && req.url === '/auth/login') {
     await login(res);
   } else if (req.method === 'GET' && path === '/auth/callback') {
