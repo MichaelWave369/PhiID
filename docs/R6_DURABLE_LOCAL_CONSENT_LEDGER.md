@@ -42,6 +42,8 @@ The R6 return contract is `phiid.local-choice-ledger/0.1`. Every recorded choice
 
 ### Security limitations
 
+**Native Windows note:** R6 deliberately fails closed on native Windows because POSIX mode bits do not establish reliable Windows ACL privacy. On a Windows development PC, use Node under **WSL2/Linux** for this optional local ledger, or leave it disabled. A future Windows-native implementation needs explicit ACL verification and tests. The existing browser preview, PhiID login lab, and R2 temporary receipts do not require this ledger.
+
 SQLite here is provided by Node 22's built-in `node:sqlite` module. It is still an **experimental** Node API in some Node 22 versions, so this R6 local prototype is intentionally not a foundation for internet-facing identity hosting.
 
 **An explicit persisted choice is still NOT authorization.** Real PhiCloud and PhiMail access will need separate HTTPS services, properly issued audience- and scope-restricted access tokens, service-side signature/expiry checks, verified resource ownership, explicit linking, durable auditing, revocation propagation and offline fallback. Do not use these ledger rows alone to permit any resource access.
