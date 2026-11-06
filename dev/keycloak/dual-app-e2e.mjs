@@ -84,7 +84,10 @@ async function withMailApps(callback) {
   const backend=spawn(process.execPath,['server/index.js'],{
     cwd:MAIL_DIR,env,stdio:['ignore','pipe','pipe'],
   });
-  const vite=spawn('npm',['run','dev','--','--strictPort','--port','5173'],{
+  // Spawn Vite directly, rather than through npm. Killing a wrapper can leave
+  // an orphan Vite process holding inherited stdout pipes and hanging CI.
+  const vite=spawn(process.execPath,
+    ['node_modules/vite/bin/vite.js','--host','127.0.0.1','--strictPort','--port','5173'],{
     cwd:MAIL_DIR,
     env:{...env,NODE_ENV:'development'},
     stdio:['ignore','pipe','pipe'],
@@ -204,6 +207,7 @@ async function testDualApp(user) {
   const mailBefore=await mailRequest('/api/identity/session');
   assert.equal((await mailBefore.json()).authenticated,false);
 
+  console.log('R5: PhiMail real login and negative callback test');
   // First authenticating PhiMail proves PhiID does not silently sign it in.
   let mail=await phiMailSignIn(user);
   let phi=await appRequest('/auth/session');
@@ -212,11 +216,13 @@ async function testDualApp(user) {
   const mailOnlyView=await mailRequest('/api/identity/session',{cookie:mail.cookie});
   assert.equal((await mailOnlyView.json()).sub,user.userId);
 
+  console.log('R5: PhiID separate real login and mailbox authority checks');
   // PhiID must perform its own, independent authorization-code login.
   let identity=await phiIdSignIn(user);
   assert.equal(identity.profile.sub,mail.profile.sub);
   await assertNoMailAuthority(mail.cookie,identity.cookie);
 
+  console.log('R5: independent logout and session isolation');
   // Ending PhiMail's session must not terminate PhiID's app session.
   const badLogout=await mailRequest('/api/identity/logout',{
     method:'POST',cookie:mail.cookie,action:'wrong'
@@ -246,6 +252,7 @@ async function testDualApp(user) {
   const mailStill=await mailRequest('/api/identity/session',{cookie:mail.cookie});
   assert.equal((await mailStill.json()).authenticated,true);
 
+  console.log('R5: verified logout isolation, final cleanup');
   // Full cleanup, with no Gmail or cloud access throughout.
   const cleanup=await mailRequest('/api/identity/logout',{
     method:'POST',cookie:mail.cookie,action:'logout'
@@ -256,11 +263,14 @@ async function testDualApp(user) {
 }
 
 async function main() {
+  console.log('R5: waiting for disposable Keycloak discovery');
   await waitForKeycloak();
+  console.log('R5: creating throwaway test identity');
   const token=await adminToken();
   let user;
   try {
     user=await createDisposableUser(token);
+    console.log('R5: verifying real PhiID + PhiMail application sessions');
     await withBridge(()=>withMailApps(()=>testDualApp(user)));
     console.log('PASS: genuine Keycloak -> PhiMail Vite proxy -> PhiMail Node OIDC bridge, independently of PhiID Node bridge');
     console.log('PASS: same verified issuer/sub, separate PKCE, sessions and logout; Gmail inbox/consent access remains denied');
