@@ -1,0 +1,61 @@
+name: PhiID real Keycloak localhost smoke
+
+on:
+  pull_request:
+    paths:
+      - 'dev/**'
+      - 'src/**'
+      - 'package.json'
+      - '.github/workflows/keycloak-e2e.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'dev/**'
+      - 'src/**'
+      - 'package.json'
+      - '.github/workflows/keycloak-e2e.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  keycloak-local-e2e:
+    name: Real local OIDC login + negative tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out PhiID
+        uses: actions/checkout@v4
+
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Generate per-run local-only Keycloak admin credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          password="$(openssl rand -hex 32)"
+          echo "::add-mask::${password}"
+          {
+            echo "KC_BOOTSTRAP_ADMIN_USERNAME=ci-admin"
+            echo "KC_BOOTSTRAP_ADMIN_PASSWORD=${password}"
+          } >> "${GITHUB_ENV}"
+
+      - name: Launch disposable Keycloak with committed development realm
+        run: docker compose -f dev/keycloak/compose.yaml up -d
+
+      - name: Real OIDC authorization-code and consent smoke
+        env:
+          PHIID_E2E_ENABLE: '1'
+          NODE_ENV: 'test'
+        run: node dev/keycloak/live-e2e.mjs
+
+      - name: Remove Keycloak test container
+        if: always()
+        run: docker compose -f dev/keycloak/compose.yaml down --remove-orphans

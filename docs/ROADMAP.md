@@ -49,3 +49,12 @@ All checkboxes are implementation evidence targets, not claims that the service 
 - [ ] Deployment proof and explicit go/no-go before public sign-ups
 
 **Never claim that a visual identity preview or passing unit test proves a secure identity service.**
+
+## R4 — Real Keycloak integration evidence (test-only)
+
+- [x] Add a disposable, loopback-bound Keycloak workflow with per-run masked admin credentials
+- [x] Add a real OIDC test harness for PhiID browser redirect, Keycloak login, signed ID Token and issuer/subject validation
+- [x] Include consent receipt, replay, logout, and independent second-client token validation in integration harness
+- [ ] Confirm GitHub Actions live Keycloak smoke passes against the pinned image
+- [ ] Run end-to-end PhiMail **application** login in a separate test rig and verify cross-app session isolation
+- [ ] Audit and harden any network-facing account provider before production signup

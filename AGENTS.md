@@ -31,3 +31,11 @@ PhiID is a **security-critical identity project**, but the R0 site is **not a lo
 - Removal only deletes a local receipt. Clearly report that no external access token was revoked.
 - GitHub Pages must remain a non-authenticating preview; never load local consent controls or cookies on public Pages.
 - The R1 Identity Lab's pinned discovery endpoint and issuer must not be weakened to allow arbitrary identity provider URLs in development.
+
+## R4 real-provider CI safety
+
+- Keep Keycloak test setup disposable. Generate the bootstrap password in the CI job, mask it, and never commit even throwaway admin credentials.
+- R4's admin-cli password grant is **only for ephemeral Keycloak test setup**; do not turn it into a PhiID application login or a user-facing authentication method.
+- The smoke script must never log OAuth codes, ID/access tokens, cookies, passwords or full callback URLs.
+- Accept redirects only to the hard-coded loopback Keycloak issuer or each exact registered client callback; prevent arbitrary URL/proxy input.
+- A green R4 smoke run proves only the test's stated scope. PhiMail's own app bridge, production deployment, passkeys, Gmail authorization and PhiOS local effect enforcement remain separately unverified.
