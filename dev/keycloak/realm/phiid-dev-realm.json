@@ -30,7 +30,7 @@
       }
     },
     {
-      "clientId": "phimail-phiid-dev",
+      "clientId": "phimail-bff-dev",
       "name": "PhiMail R2B independent OIDC relying party (dev only)",
       "description": "PhiMail's independent, loopback-only OIDC client. The account subject may match PhiID's for the same Keycloak user, but no tokens/cookies are shared and no mailbox access is granted.",
       "enabled": true,
@@ -42,7 +42,7 @@
       "implicitFlowEnabled": false,
       "serviceAccountsEnabled": false,
       "redirectUris": [
-        "http://localhost:5173/auth/phiid/callback"
+        "http://127.0.0.1:5173/auth/phiid/callback"
       ],
       "webOrigins": [],
       "attributes": {
