@@ -92,3 +92,10 @@ See the [PhiCloud identity boundary proposal](https://github.com/MichaelWave369/
 - [W3C WebAuthn Level 3](https://www.w3.org/TR/webauthn-3/)
 
 **License:** MIT.
+
+
+### R7: Real Keycloak-to-PocketMesh integration acceptance
+
+PhiID's [R7 real cross-repository smoke test](docs/R7_REAL_POCKETMESH_INTEGRATION.md) now checks out a **pinned, reviewed NBGPocketMesh commit** and uses its actual E0 router, signed-permit generator, independent approval verifier and one-shot executor. A **real disposable Keycloak OIDC session** in PhiID reviews and explicitly approves the exact signed permit. The child worker performs the synthetic network-health album once, then refuses replay. The test also rejects forged approvals, unapproved actions and non-authoritative R2 consent.
+
+This is a **localhost-only development acceptance test**, not production user authorization or permission for real PhiOS effects. The confirmed CI run uses temporary signer keys and a disposable user, never a live network device. Run it through the existing real-Keycloak workflow; its sibling code is intentionally pinned and [the limits are documented](docs/R7_REAL_POCKETMESH_INTEGRATION.md).
