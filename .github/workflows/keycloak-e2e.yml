@@ -23,7 +23,7 @@ jobs:
   keycloak-local-e2e:
     name: Real local OIDC login + negative tests
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Check out PhiID
         uses: actions/checkout@v4
@@ -55,6 +55,21 @@ jobs:
           PHIID_E2E_ENABLE: '1'
           NODE_ENV: 'test'
         run: node dev/keycloak/live-e2e.mjs
+
+      - name: Check out audited PocketMesh consumer revision
+        uses: actions/checkout@v4
+        with:
+          repository: MichaelWave369/NBGPocketMesh
+          ref: 50d11cc7f28293c9f6e6333019dcb668fd299225
+          path: integration/pocketmesh
+          persist-credentials: false
+
+      - name: Real Keycloak → PhiID → PocketMesh one-shot authorization and replay
+        env:
+          PHIID_E2E_ENABLE: '1'
+          PHIID_POCKET_E2E_ENABLE: '1'
+          NODE_ENV: 'test'
+        run: node dev/keycloak/pocketmesh-e2e.mjs
 
       - name: Remove Keycloak test container
         if: always()
